@@ -1,0 +1,306 @@
+@extends('layouts.app')
+
+@section('title', 'Reward')
+@section('page-title', 'Reward')
+
+@section('content')
+<div class="space-y-6">
+    <!-- Alert Messages -->
+    @if ($message = Session::get('success'))
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg" id="success-alert">
+        {{ $message }}
+        <button type="button" class="float-right text-green-700" onclick="this.parentElement.style.display='none'">
+            &times;
+        </button>
+    </div>
+    @endif
+
+    @if ($message = Session::get('error'))
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" id="error-alert">
+        {{ $message }}
+        <button type="button" class="float-right text-red-700" onclick="this.parentElement.style.display='none'">
+            &times;
+        </button>
+    </div>
+    @endif
+
+    <!-- Export Section -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Ekspor Laporan Poin Driver</h3>
+        
+        <div class="space-y-4">
+            <!-- Export Semua Driver -->
+            <div>
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Ekspor Semua Driver</h4>
+                <div class="space-y-4">
+                    <a href="{{ route('reward.export-all') }}" 
+                       class="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md hover:shadow-lg transform hover:scale-105"
+                       onclick="showLoadingSpinner(this)">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span class="font-medium">Ekspor Semua Driver (Excel)</span>
+                    </a>
+                    <p class="text-xs text-gray-500">Unduh semua data driver beserta poin dan riwayat transaksi</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p class="text-sm text-green-800">
+                <strong>Info:</strong> Ekspor semua driver untuk mendapatkan data lengkap semua driver dalam satu file Excel.
+            </p>
+        </div>
+    </div>
+
+    <!-- Tabel Reward (SUDAH DI-GROUP BERDASARKAN DRIVER) -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-800">Daftar Reward (Per Driver)</h3>
+            <div class="text-sm text-gray-500">
+                Total Driver Unik: {{ $rewards->count() }} data
+            </div>
+        </div>
+        
+        @if($rewards->count() > 0)
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Driver</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Instansi</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Poin </th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Terakhir</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tgl. Terakhir</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach($rewards as $key => $reward)
+                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                            {{ $key + 1 }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                            <div class="font-medium text-gray-900">{{ $reward->driver_name ?? '-' }}</div>
+                            @if($reward->driver_id_card)
+                                <div class="text-xs text-gray-500">{{ $reward->driver_id_card }}</div>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                            {{ $reward->original_driver->instansi ?? '-' }}
+                        </td>
+                        {{-- MENAMPILKAN TOTAL POIN KELUAR --}}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-bold">
+                            <span class="text-green-700">{{ number_format($reward->total_points_spent, 0, ',', '.') }}</span>
+                        </td>
+                        {{-- STATUS TERAKHIR --}}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm">
+                            @php
+                                $status = strtolower($reward->latest_status);
+                                $statusColors = [
+                                    'completed' => ['bg' => 'green-100', 'text' => 'green-800'],
+                                    'pending' => ['bg' => 'yellow-100', 'text' => 'yellow-800'],
+                                    'rejected' => ['bg' => 'red-100', 'text' => 'red-800'],
+                                ];
+                                $color = $statusColors[$status] ?? $statusColors['pending'];
+                            @endphp
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-{{ $color['bg'] }} text-{{ $color['text'] }}">
+                                {{ ucfirst($status) }}
+                            </span>
+                        </td>
+                        {{-- TANGGAL TRANSAKSI TERAKHIR --}}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {{ $reward->latest_date->format('d-m-Y H:i') }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm space-x-2">
+                            <a href="{{ route('reward.export') }}?driver_id={{ $reward->id }}" 
+                               class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition-colors"
+                               onclick="showLoadingSpinner(this)">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Export
+                            </a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Dihilangkan karena data sudah di-group menjadi Collection biasa, bukan LengthAwarePaginator. -->
+        
+        @else
+        <div class="text-center py-12">
+            <div class="text-gray-400 mb-4">
+                <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+            </div>
+            <p class="text-gray-500 text-lg mb-2">Belum ada data reward</p>
+            <p class="text-gray-400 text-sm">Data reward akan muncul setelah ditambahkan.</p>
+        </div>
+        @endif
+    </div>
+    
+    <!-- Inline JS: AJAX export, spinner, toasts -->
+    <script>
+    //     // FUNGSI UNTUK MODAL PENUKARAN POIN
+    
+    // // Buka Modal
+    // function openRedeemModal(driverId, driverName, currentPoints) {
+    //     document.getElementById('redeem_driver_id').value = driverId;
+    //     document.getElementById('redeem_driver_name').textContent = driverName;
+    //     document.getElementById('current_points').textContent = currentPoints;
+    //     document.getElementById('redeemModal').classList.remove('hidden');
+    //     document.getElementById('redeemModal').classList.add('flex');
+    //     document.getElementById('points_to_redeem').focus();
+    // }
+
+    // // Tutup Modal
+    // function closeRedeemModal() {
+    //     document.getElementById('redeemModal').classList.add('hidden');
+    //     document.getElementById('redeemModal').classList.remove('flex');
+    //     document.getElementById('redeemForm').reset(); // Reset form setelah ditutup
+    // }
+    
+    // // Handler untuk tombol Tukar Poin di setiap baris
+    // document.querySelectorAll('.btn-redeem-point').forEach(button => {
+    //     button.addEventListener('click', function() {
+    //         const driverId = this.getAttribute('data-driver-id');
+    //         const driverName = this.getAttribute('data-driver-name');
+    //         const currentPoints = this.getAttribute('data-current-points');
+    //         openRedeemModal(driverId, driverName, currentPoints);
+    //     });
+    // });
+
+    // // Handler untuk Submit Form Penukaran
+    // document.getElementById('redeemForm').addEventListener('submit', async function(e) {
+    //     e.preventDefault();
+        
+    //     const form = e.target;
+    //     const driverId = form.elements.driver_id.value;
+    //     const pointsToRedeem = parseInt(form.elements.points_to_redeem.value);
+    //     const currentPoints = parseInt(document.getElementById('current_points').textContent.replace(/[^0-9]/g, ''));
+    //     const submitBtn = document.getElementById('redeemSubmitBtn');
+    //     const originalText = submitBtn.innerHTML;
+
+    //     // Validasi Sederhana di sisi klien
+    //     if (pointsToRedeem <= 0 || isNaN(pointsToRedeem)) {
+    //         showToast('Jumlah poin yang ditukarkan harus lebih dari 0.', 'error');
+    //         return;
+    //     }
+    //     if (pointsToRedeem > currentPoints) {
+    //         showToast('Poin tidak mencukupi untuk penukaran ini!', 'error');
+    //         return;
+    //     }
+
+    //     // Tampilkan Loading
+    //     submitBtn.innerHTML = '<svg class="w-5 h-5 animate-spin mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg> Processing...';
+    //     submitBtn.disabled = true;
+
+    //     try {
+    //         const formData = new FormData(form);
+    //         const response = await fetch(form.action, {
+    //             method: 'POST',
+    //             body: new URLSearchParams(formData),
+    //             headers: {
+    //                 'X-Requested-With': 'XMLHttpRequest',
+    //                 'Content-Type': 'application/x-www-form-urlencoded',
+    //                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    //             }
+    //         });
+            
+    //         const result = await response.json();
+
+    //         if (response.ok && result.success) {
+    //             showToast(result.message || 'Penukaran poin berhasil diproses.', 'success');
+    //             closeRedeemModal();
+    //             // Refresh halaman atau update data (disarankan refresh untuk memastikan poin terbaru)
+    //             setTimeout(() => window.location.reload(), 1000); 
+    //         } else {
+    //             throw new Error(result.message || 'Gagal memproses penukaran poin.');
+    //         }
+
+    //     } catch (error) {
+    //         console.error('Redeem Error:', error);
+    //         showToast(error.message || 'Terjadi kesalahan pada server.', 'error');
+    //     } finally {
+    //         submitBtn.innerHTML = originalText;
+        (function(){
+            // Auto-hide alerts after 5 seconds
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('#success-alert, #error-alert');
+                alerts.forEach(alert => {
+                    if (alert) {
+                        alert.style.transition = 'opacity 0.5s';
+                        alert.style.opacity = '0';
+                        setTimeout(() => alert.remove(), 500);
+                    }
+                });
+            }, 5000);
+
+            // Function to show loading spinner for export buttons
+            function showLoadingSpinner(button) {
+                const originalContent = button.innerHTML;
+                const isSmallButton = button.classList.contains('text-xs');
+                const iconSize = isSmallButton ? 'w-4 h-4' : 'w-5 h-5';
+                
+                // Show spinner
+                button.innerHTML = `
+                    <svg class="${iconSize} animate-spin" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    ${isSmallButton ? '' : 'Memproses...'}
+                `;
+                button.style.pointerEvents = 'none';
+                button.classList.add('opacity-75');
+                
+                // Restore after 3 seconds (fallback)
+                setTimeout(() => {
+                    button.innerHTML = originalContent;
+                    button.style.pointerEvents = '';
+                    button.classList.remove('opacity-75');
+                }, 3000);
+            }
+
+            function showToast(message, type) {
+                var container = document.getElementById('toastContainer');
+                if(!container){
+                    container = document.createElement('div');
+                    container.id = 'toastContainer';
+                    container.className = 'fixed top-4 right-4 z-50 flex flex-col gap-2';
+                    document.body.appendChild(container);
+                }
+                
+                var el = document.createElement('div');
+                el.className = `px-4 py-3 rounded-lg shadow-lg flex items-center justify-between min-w-64 max-w-md ${
+                    type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' : 
+                    'bg-green-100 text-green-800 border border-green-200'
+                }`;
+                
+                el.innerHTML = `
+                    <span>${message}</span>
+                    <button type="button" class="text-${type === 'error' ? 'red' : 'green'}-600 hover:text-${type === 'error' ? 'red' : 'green'}-800" onclick="this.parentElement.remove()">
+                        &times;
+                    </button>
+                `;
+                
+                container.appendChild(el);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (el.parentElement) {
+                        el.style.opacity = '0';
+                        el.style.transition = 'opacity 0.5s';
+                        setTimeout(() => el.remove(), 500);
+                    }
+                }, 5000);
+            }
+        })();
+    </script>
+</div>
+@endsection
