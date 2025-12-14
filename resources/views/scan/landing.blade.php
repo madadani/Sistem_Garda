@@ -173,7 +173,7 @@
 </div>
 
 <!-- Popup Not Found -->
-<div id="notFoundPopup" class="popup-overlay" style="display: none;">
+<!-- <div id="notFoundPopup" class="popup-overlay" style="display: none;">
     <div class="popup-content">
         <div class="popup-icon">
             <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,7 +194,7 @@
             </span>
         </button>
     </div>
-</div>
+</div> -->
 
 <style>
     /* Style untuk tombol keypad */
@@ -338,6 +338,8 @@
     // =================== VARIABLES ===================
     let scannerBuffer = '';
     let scannerTimer = null;
+    let startTime = null;
+    let isManualInput = false;
     const SCANNER_TIMEOUT = 150; // ms
     
     // =================== FUNCTIONS ===================
@@ -384,8 +386,8 @@
             if (data.exists) {
                 window.location.href = `/driver/scan/${cleanId}`;
             } else {
-                // Tampilkan popup not found
-                showNotFoundPopup(cleanId);
+                // Langsung redirect ke halaman driver-not-found
+                window.location.href = `/driver-not-found?driver_id=${cleanId}`;
             }
         } catch (error) {
             console.error('Error:', error);
@@ -493,28 +495,65 @@
         // Fokus ke input saat halaman dimuat
         input.focus();
         
-        // 1. EVENT UNTUK DETEKSI SCANNER
+        // 1. EVENT UNTUK DETEKSI SCANNER VS MANUAL INPUT
         input.addEventListener('input', function(e) {
             const currentValue = this.value;
             
             // Reset timer sebelumnya
             clearTimeout(scannerTimer);
             
+            // Set start time untuk input pertama
+            if (!startTime || scannerBuffer.length === 0) {
+                startTime = Date.now();
+            }
+            
             // Simpan ke buffer
             scannerBuffer = currentValue;
             
-            // Timer untuk deteksi scanner
+            // Timer untuk deteksi scanner (scanner input cepat)
             scannerTimer = setTimeout(() => {
-                // Jika panjang >= 6 digit dan hanya angka, anggap sebagai scanner
-                if (scannerBuffer.length >= 6 && /^\d+$/.test(scannerBuffer)) {
+                const endTime = Date.now();
+                const inputDuration = endTime - startTime;
+                const avgTimePerChar = scannerBuffer.length > 0 ? inputDuration / scannerBuffer.length : 0;
+                
+                console.log('Input analysis:', {
+                    length: scannerBuffer.length,
+                    duration: inputDuration,
+                    avgTimePerChar: avgTimePerChar,
+                    isManualInput: isManualInput
+                });
+                
+                // JIKA INI MANUAL INPUT (dari keyboard), HANYA ≥12 digit yang auto-submit
+                if (isManualInput) {
+                    if (scannerBuffer.length >= 12 && /^\d+$/.test(scannerBuffer)) {
+                        console.log('Manual keyboard input detected - auto-submitting:', scannerBuffer);
+                        checkDriverForScanner(scannerBuffer);
+                    }
+                    // Manual input <12 digit: TIDAK ADA AUTO-SUBMIT
+                    else {
+                        console.log('Manual keyboard input <12 digit - no auto-submit:', scannerBuffer.length);
+                    }
+                }
+                // JIKA INI SCANNER (input sangat cepat), auto-submit untuk ≥6 digit
+                else if (scannerBuffer.length >= 6 && /^\d+$/.test(scannerBuffer) && avgTimePerChar < 30) {
                     console.log('Scanner detected - auto-submitting:', scannerBuffer);
-                    
-                    // Untuk scanner, cek ke API dulu
                     checkDriverForScanner(scannerBuffer);
                 }
-                // Reset buffer
+                
+                // Reset buffer dan timer
                 scannerBuffer = '';
+                startTime = null;
+                isManualInput = false;
             }, SCANNER_TIMEOUT + 50);
+        });
+        
+        // 2. DETEKSI MANUAL INPUT (keyboard events)
+        input.addEventListener('keydown', function(e) {
+            // Jika ini input dari keyboard (bukan paste), tandai sebagai manual input
+            if (e.key >= '0' && e.key <= '9') {
+                isManualInput = true;
+                console.log('Manual keyboard input detected');
+            }
         });
         
         // 2. BLOCK SEMUA ENTER KEY DI INPUT
@@ -522,13 +561,13 @@
             if (e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Enter key blocked - please use Enter button');
+                console.log('Tombol Enter diblokir - gunakan tombol Enter hijau');
                 
-                // Feedback visual
-                this.style.boxShadow = '0 0 0 2px #ef4444';
+                // Feedback visual yang lebih soft untuk manual input
+                this.style.boxShadow = '0 0 0 2px #10b981';
                 setTimeout(() => {
                     this.style.boxShadow = '';
-                }, 300);
+                }, 200);
                 return false;
             }
         });
@@ -561,8 +600,8 @@
             if (data.exists) {
                 window.location.href = `/driver/scan/${cleanId}`;
             } else {
-                // Tampilkan popup not found untuk scanner juga
-                showNotFoundPopup(cleanId);
+                // Langsung redirect ke halaman driver-not-found untuk scanner juga
+                window.location.href = `/driver-not-found?driver_id=${cleanId}`;
             }
         } catch (error) {
             console.error('Error checking scanner:', error);
