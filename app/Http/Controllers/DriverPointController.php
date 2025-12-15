@@ -115,6 +115,31 @@ class DriverPointController extends Controller
         ]);
     }
 
+    public function validatePatientData(Request $request, $transactionId)
+    {
+        $transaction = Transaction::with('driver')->findOrFail($transactionId);
+
+        // Validasi input data
+        $validated = $request->validate([
+            'patient_name' => 'nullable|string|max:255',
+            'patient_condition' => 'nullable|string',
+            'destination' => 'required|in:IGD,Ponek',
+        ], [
+            'destination.required' => 'Tujuan pasien wajib dipilih.',
+            'destination.in' => 'Tujuan hanya boleh IGD atau Ponek.',
+        ]);
+
+        // Simpan data ke session untuk ditampilkan di halaman validasi
+        session(['patient_data' => $validated]);
+
+        // Tampilkan halaman validasi
+        return view('driver.validate-patient', [
+            'transaction' => $transaction,
+            'driver' => $transaction->driver,
+            'patientData' => $validated
+        ]);
+    }
+
     public function storePatientData(Request $request, $transactionId)
     {
         $transaction = Transaction::with('driver', 'patient')->findOrFail($transactionId);
@@ -165,12 +190,12 @@ class DriverPointController extends Controller
             ];
 
             return redirect()
-                ->back()
+                ->route('driver.scan', $driver->driver_id_card)
                 ->with('success', $notificationData);
         } else {
             // Data pasien tidak lengkap, tidak berikan poin
             return redirect()
-                ->back()
+                ->route('driver.scan', $driver->driver_id_card)
                 ->with('info', 'Data pasien tidak lengkap. Driver tidak mendapatkan poin.');
         }
     }

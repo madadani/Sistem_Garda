@@ -38,7 +38,7 @@
             @endif
             
             <!-- Top bar -->
-            <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center justify-between gap-8">
                 <div class="flex items-center gap-3">
                     <div class="h-11 w-11 rounded-2xl bg-white/90 border border-white/40 flex items-center justify-center shadow-inner overflow-hidden">
                         <img src="{{ asset('images/logo-garda.png') }}" alt="Logo GARDA" class="w-9 h-9 object-contain">
@@ -47,22 +47,13 @@
                         <p class="text-xs uppercase tracking-[0.16em] text-amber-100/90 font-semibold">GARDA RSSG</p>
                     </div>
                 </div>
-
-                <!-- @auth
-                    <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg border border-white/20 transition-colors duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Dashboard
-                    </a>
-                @endauth -->
             </div>
 
-            <!-- Input dan Keypad Area -->
+            <!-- Input Area -->
             <div class="flex-1 w-full max-w-sm mx-auto">
                 <!-- Container untuk Input Field dan Tombol Enter (sebaris) -->
                 <div class="flex justify-center mb-3">
-                    <div class="flex items-stretch gap-3" style="width: 300px;">
+                    <div class="flex items-stretch gap-3" style="width: 400px;">
                         <!-- Input Field -->
                         <div class="flex-1">
                             <input 
@@ -85,7 +76,7 @@
                             type="button" 
                             onclick="submitManual()" 
                             class="flex items-center justify-center px-4 py-3 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 whitespace-nowrap h-14 min-w-[80px]">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-1 h-1 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
                             <span>Enter</span>
@@ -102,131 +93,16 @@
                         <span id="error-text"></span>
                     </div>
                 </div>
-                
-                <!-- Keypad -->
-                <div class="flex justify-center gap-2">
-                    <div class="p-4 rounded-3xl backdrop-filter backdrop-blur-sm bg-white/30 shadow-2xl" style="width: 275px;">
-                        <!-- Baris 1 -->
-                        <div class="flex justify-center gap-3 mb-3">
-                            <div class="w-16">
-                                <button type="button" onclick="pressKeypadDigit('1')" class="keypad-btn w-full">1</button>
-                            </div>
-                            <div class="w-16">
-                                <button type="button" onclick="pressKeypadDigit('2')" class="keypad-btn w-full">2</button>
-                            </div>
-                            <div class="w-16">
-                                <button type="button" onclick="pressKeypadDigit('3')" class="keypad-btn w-full">3</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Baris 2 -->
-                        <div class="flex justify-center gap-3 mb-3">
-                            <div class="w-16">
-                                <button type="button" onclick="pressKeypadDigit('4')" class="keypad-btn w-full">4</button>
-                            </div>
-                            <div class="w-16">
-                                <button type="button" onclick="pressKeypadDigit('5')" class="keypad-btn w-full">5</button>
-                            </div>
-                            <div class="w-16">
-                                <button type="button" onclick="pressKeypadDigit('6')" class="keypad-btn w-full">6</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Baris 3 -->
-                        <div class="flex justify-center gap-3 mb-3">
-                            <div class="w-16">
-                                <button type="button" onclick="pressKeypadDigit('7')" class="keypad-btn w-full">7</button>
-                            </div>
-                            <div class="w-16">
-                                <button type="button" onclick="pressKeypadDigit('8')" class="keypad-btn w-full">8</button>
-                            </div>
-                            <div class="w-16">
-                                <button type="button" onclick="pressKeypadDigit('9')" class="keypad-btn w-full">9</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Baris 4 -->
-                        <div class="flex justify-center gap-3">
-                            <div class="w-16"></div> <!-- Kolom kosong -->
-                            <div class="w-16">
-                                <button type="button" onclick="pressKeypadDigit('0')" class="keypad-btn w-full">0</button>
-                            </div>
-                            <div class="w-16">
-                                <button type="button" 
-                                    onclick="backspaceIdInput()" 
-                                    class="w-16 h-16 bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center justify-center border-2 border-red-700 shadow-md hover:shadow-lg transition-all duration-200">
-                                    <img src="{{ asset('images/icon-delete.png') }}" 
-                                        alt="Hapus" 
-                                        class="w-8 h-8">
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <p class="text-xs text-center text-white/80 mt-6 tracking-wider">
-                *Melayani Dengan Hati.*
+                *Melayani Sepenuh Hati.*
             </p>
         </div>
     </div>
 </div>
 
-<!-- Popup Not Found -->
-<!-- <div id="notFoundPopup" class="popup-overlay" style="display: none;">
-    <div class="popup-content">
-        <div class="popup-icon">
-            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-        </div>
-        <h2 class="popup-title">ID Card Tidak Ditemukan</h2>
-        <p class="popup-message" id="popupMessage">
-            ID Card <span id="driverIdDisplay" class="font-bold"></span> tidak terdaftar dalam sistem.
-            <br>Silakan periksa kembali atau hubungi admin.
-        </p>
-        <button onclick="closeNotFoundPopup()" class="popup-button">
-            <span class="flex items-center justify-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                TUTUP & COBA LAGI
-            </span>
-        </button>
-    </div>
-</div> -->
-
 <style>
-    /* Style untuk tombol keypad */
-    .keypad-btn {
-        height: 64px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        font-weight: 500;
-        background-color: #ffffffc0;
-        color: #1f2937;
-        border: 2px solid #d1d5db;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        transition: all 0.2s ease;
-        cursor: pointer;
-        margin: 0;
-    }
-
-    .keypad-btn:hover {
-        background-color: #f9fafb;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-
-    .keypad-btn:active {
-        transform: translateY(0);
-        background-color: #f3f4f6;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-
     /* Style untuk popup not found */
     .popup-overlay {
         position: fixed;
@@ -335,13 +211,6 @@
 </style>
 
 <script>
-    // =================== VARIABLES ===================
-    let scannerBuffer = '';
-    let scannerTimer = null;
-    let startTime = null;
-    let isManualInput = false;
-    const SCANNER_TIMEOUT = 150; // ms
-    
     // =================== FUNCTIONS ===================
     
     // 1. Fungsi untuk submit MANUAL (tombol Enter)
@@ -400,88 +269,14 @@
         }
     }
     
-    // 4. Fungsi untuk menampilkan popup not found
-    function showNotFoundPopup(driverId) {
-        // Update ID driver di popup
-        document.getElementById('driverIdDisplay').textContent = driverId;
-        
-        // Tampilkan popup dengan animasi
-        const popup = document.getElementById('notFoundPopup');
-        popup.style.display = 'flex';
-        
-        // Animasi shake untuk input field
-        const input = document.getElementById('driverIdCardInput');
-        if (input) {
-            input.style.animation = 'shake 0.5s ease';
-            input.focus();
-            input.select();
-            
-            // Reset animasi setelah selesai
-            setTimeout(() => {
-                input.style.animation = '';
-            }, 500);
-        }
-        
-        // Tambahkan efek suara jika diinginkan (opsional)
-        if (typeof Audio !== 'undefined') {
-            try {
-                const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ');
-                audio.play().catch(() => {});
-            } catch (e) {}
-        }
-    }
-    
-    // 5. Fungsi untuk menutup popup
-    function closeNotFoundPopup() {
-        const popup = document.getElementById('notFoundPopup');
-        popup.style.display = 'none';
-        
-        // Fokus kembali ke input field
-        const input = document.getElementById('driverIdCardInput');
-        if (input) {
-            input.focus();
-            input.select();
-        }
-    }
-    
-    // 6. Fungsi untuk keypad
-    function pressKeypadDigit(digit) {
-        const input = document.getElementById('driverIdCardInput');
-        if (!input) return;
-        
-        // Haptic feedback
-        if (navigator.vibrate) navigator.vibrate(50);
-        
-        // Reset scanner detection karena ini manual input
-        scannerBuffer = '';
-        clearTimeout(scannerTimer);
-        
-        // Tambahkan digit
-        input.value = (input.value || '') + digit;
-        input.focus();
-    }
-    
-    // 7. Fungsi backspace
-    function backspaceIdInput() {
-        const input = document.getElementById('driverIdCardInput');
-        if (input && input.value.length > 0) {
-            if (navigator.vibrate) navigator.vibrate(30);
-            input.value = input.value.slice(0, -1);
-            input.focus();
-            
-            // Reset scanner detection
-            scannerBuffer = '';
-            clearTimeout(scannerTimer);
-        }
-    }
-    
-    // 8. Fungsi show error (untuk pesan error kecil)
+    // 4. Fungsi show error (untuk pesan error kecil)
     function showError(message) {
-        const errorElement = document.getElementById('errorMessage');
+        const errorElement = document.getElementById('error-message');
         if (errorElement) {
-            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+            document.getElementById('error-text').textContent = message;
             setTimeout(() => {
-                errorElement.textContent = '';
+                errorElement.classList.add('hidden');
             }, 3000);
         }
     }
@@ -495,119 +290,15 @@
         // Fokus ke input saat halaman dimuat
         input.focus();
         
-        // 1. EVENT UNTUK DETEKSI SCANNER VS MANUAL INPUT
-        input.addEventListener('input', function(e) {
-            const currentValue = this.value;
-            
-            // Reset timer sebelumnya
-            clearTimeout(scannerTimer);
-            
-            // Set start time untuk input pertama
-            if (!startTime || scannerBuffer.length === 0) {
-                startTime = Date.now();
-            }
-            
-            // Simpan ke buffer
-            scannerBuffer = currentValue;
-            
-            // Timer untuk deteksi scanner (scanner input cepat)
-            scannerTimer = setTimeout(() => {
-                const endTime = Date.now();
-                const inputDuration = endTime - startTime;
-                const avgTimePerChar = scannerBuffer.length > 0 ? inputDuration / scannerBuffer.length : 0;
-                
-                console.log('Input analysis:', {
-                    length: scannerBuffer.length,
-                    duration: inputDuration,
-                    avgTimePerChar: avgTimePerChar,
-                    isManualInput: isManualInput
-                });
-                
-                // JIKA INI MANUAL INPUT (dari keyboard), HANYA ≥12 digit yang auto-submit
-                if (isManualInput) {
-                    if (scannerBuffer.length >= 12 && /^\d+$/.test(scannerBuffer)) {
-                        console.log('Manual keyboard input detected - auto-submitting:', scannerBuffer);
-                        checkDriverForScanner(scannerBuffer);
-                    }
-                    // Manual input <12 digit: TIDAK ADA AUTO-SUBMIT
-                    else {
-                        console.log('Manual keyboard input <12 digit - no auto-submit:', scannerBuffer.length);
-                    }
-                }
-                // JIKA INI SCANNER (input sangat cepat), auto-submit untuk ≥6 digit
-                else if (scannerBuffer.length >= 6 && /^\d+$/.test(scannerBuffer) && avgTimePerChar < 30) {
-                    console.log('Scanner detected - auto-submitting:', scannerBuffer);
-                    checkDriverForScanner(scannerBuffer);
-                }
-                
-                // Reset buffer dan timer
-                scannerBuffer = '';
-                startTime = null;
-                isManualInput = false;
-            }, SCANNER_TIMEOUT + 50);
-        });
-        
-        // 2. DETEKSI MANUAL INPUT (keyboard events)
-        input.addEventListener('keydown', function(e) {
-            // Jika ini input dari keyboard (bukan paste), tandai sebagai manual input
-            if (e.key >= '0' && e.key <= '9') {
-                isManualInput = true;
-                console.log('Manual keyboard input detected');
-            }
-        });
-        
-        // 2. BLOCK SEMUA ENTER KEY DI INPUT
+        // Enable Enter key untuk submit langsung
         input.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                e.stopPropagation();
-                console.log('Tombol Enter diblokir - gunakan tombol Enter hijau');
-                
-                // Feedback visual yang lebih soft untuk manual input
-                this.style.boxShadow = '0 0 0 2px #10b981';
-                setTimeout(() => {
-                    this.style.boxShadow = '';
-                }, 200);
+                console.log('Tombol Enter ditekan - submit manual');
+                submitManual();
                 return false;
-            }
-        });
-        
-        // Juga block di keypress untuk browser tertentu
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-        });
-        
-        // Tutup popup dengan ESC key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeNotFoundPopup();
             }
         });
     });
-    
-    // Fungsi untuk cek driver dari scanner
-    async function checkDriverForScanner(driverId) {
-        const cleanId = driverId.replace(/[^0-9]/g, '');
-        
-        try {
-            const response = await fetch(`/api/check-driver/${cleanId}`);
-            const data = await response.json();
-            
-            if (data.exists) {
-                window.location.href = `/driver/scan/${cleanId}`;
-            } else {
-                // Langsung redirect ke halaman driver-not-found untuk scanner juga
-                window.location.href = `/driver-not-found?driver_id=${cleanId}`;
-            }
-        } catch (error) {
-            console.error('Error checking scanner:', error);
-            // Jika error, tetap redirect tapi ke halaman not found
-            window.location.href = `/driver/scan/${cleanId}`;
-        }
-    }
 </script>
 @endsection

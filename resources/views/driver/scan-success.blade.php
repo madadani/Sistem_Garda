@@ -113,7 +113,7 @@
             <h2 class="text-xl font-bold text-gray-800 mb-1">Input Data Pasien</h2>
             <p class="text-sm text-gray-500 mb-4">Silakan lengkapi data pasien yang sedang diantar.</p>
 
-            <form action="{{ route('driver.scan.patient', $latestTransaction->id) }}" method="POST" class="space-y-4">
+            <form action="{{ route('driver.scan.patient.validate', $latestTransaction->id) }}" method="POST" class="space-y-4">
                 @csrf
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pasien</label>
@@ -160,7 +160,7 @@
 
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="closePatientModal()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium">Batal</button>
-                    <button type="submit" class="px-5 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700">Simpan</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700">Next</button>
                 </div>
             </form>
         </div>

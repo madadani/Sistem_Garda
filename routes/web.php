@@ -37,6 +37,8 @@ Route::get('/driver/point/{driverIdCard}', [App\Http\Controllers\DriverPointCont
 Route::get('/driver/scan/{driverIdCard}', [App\Http\Controllers\DriverPointController::class, 'scanTransaction'])->name('driver.scan')  ->where('driverIdCard', '.*');  // Menerima nilai kosong;
 // Driver Scan - Store patient data (public, tanpa auth)
 Route::post('/driver/scan/{transaction}/patient', [App\Http\Controllers\DriverPointController::class, 'storePatientData'])->name('driver.scan.patient');
+// Driver Scan - Validate patient data before storing
+Route::post('/driver/scan/{transaction}/patient/validate', [App\Http\Controllers\DriverPointController::class, 'validatePatientData'])->name('driver.scan.patient.validate');
 
 // Auth Routes (login admin dipindah ke /admin)
 Route::get('/admin', [AuthController::class, 'showLoginForm'])->name('login')->middleware('guest');
