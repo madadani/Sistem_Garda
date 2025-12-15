@@ -92,21 +92,20 @@ class DriverPointController extends Controller
             ->first();
 
         // Buat transaksi baru dengan status CONFIRMED untuk semua scan
-        if (!$latestTransaction || $latestTransaction->created_at->diffInMinutes(now()) > 5) {
-            $transaction = Transaction::create([
-                'transaction_id' => 'TRX-' . strtoupper(Str::random(10)),
-                'driver_id' => $driver->id,
-                'status' => 'CONFIRMED', // Kembali ke CONFIRMED
-                'scan_time' => now(),
-                'points_awarded' => 1,
-            ]);
-            
-            // Kirim event untuk real-time update
-            event(new NewScan($transaction));
-            
-            // Set latestTransaction ke transaksi yang baru dibuat
-            $latestTransaction = $transaction;
-        }
+        // Selalu buat transaksi baru setiap scan untuk mencatat setiap kunjungan
+        $transaction = Transaction::create([
+            'transaction_id' => 'TRX-' . strtoupper(Str::random(10)),
+            'driver_id' => $driver->id,
+            'status' => 'CONFIRMED',
+            'scan_time' => now(),
+            'points_awarded' => 1,
+        ]);
+        
+        // Kirim event untuk real-time update
+        event(new NewScan($transaction));
+        
+        // Set latestTransaction ke transaksi yang baru dibuat
+        $latestTransaction = $transaction;
         
         // Tampilkan halaman sukses dengan data driver dan transaksi terakhir
         return view('driver.scan-success', [

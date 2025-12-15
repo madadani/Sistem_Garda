@@ -247,7 +247,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                         </svg>
                     </div>
-                    <p class="text-sm font-medium text-gray-800">Reset Poin</p>
+                    <p class="text-sm font-medium text-gray-800">Reset Data Sistem</p>
                 </a>
             </div>
         </div>
@@ -455,27 +455,32 @@
                 .then(data => {
                     console.log('Polling scan response:', data);
                     const counter = document.getElementById('scans-today');
-                    if (counter && data.scans_today !== undefined && data.scans_today !== lastScanCount) {
-                        const oldCount = parseInt(counter.textContent) || 0;
-                        counter.textContent = data.scans_today;
-                        counter.classList.add('pulse-animation');
-                        setTimeout(() => counter.classList.remove('pulse-animation'), 1000);
+                    if (counter && data.scans_today !== undefined) {
+                        const currentCount = parseInt(counter.textContent) || 0;
+                        const newCount = data.scans_today;
                         
-                        // Update persentase
-                        const scanChange = document.getElementById('scan-change');
-                        if (scanChange && data.scans_yesterday !== undefined) {
-                            const yesterdayCount = data.scans_yesterday;
-                            const todayCount = data.scans_today;
-                            const percentageChange = yesterdayCount > 0 ? 
-                                Math.round(((todayCount - yesterdayCount) / yesterdayCount) * 100) : 0;
+                        // Always update if different
+                        if (newCount !== currentCount) {
+                            counter.textContent = newCount;
+                            counter.classList.add('pulse-animation');
+                            setTimeout(() => counter.classList.remove('pulse-animation'), 1000);
                             
-                            const isPositive = percentageChange >= 0;
-                            scanChange.className = `text-sm ${isPositive ? 'text-green-600' : 'text-red-600'} font-medium`;
-                            scanChange.innerHTML = `${isPositive ? '↑' : '↓'} ${Math.abs(percentageChange)}%`;
+                            // Update persentase
+                            const scanChange = document.getElementById('scan-change');
+                            if (scanChange && data.scans_yesterday !== undefined) {
+                                const yesterdayCount = data.scans_yesterday;
+                                const percentageChange = yesterdayCount > 0 ? 
+                                    Math.round(((newCount - yesterdayCount) / yesterdayCount) * 100) : 0;
+                                
+                                const isPositive = percentageChange >= 0;
+                                scanChange.className = `text-sm ${isPositive ? 'text-green-600' : 'text-red-600'} font-medium`;
+                                scanChange.innerHTML = `${isPositive ? '↑' : '↓'} ${Math.abs(percentageChange)}%`;
+                            }
+                            
+                            // Update lastScanCount for next comparison
+                            lastScanCount = newCount;
+                            console.log('Updated scan count from', currentCount, 'to', newCount);
                         }
-                        
-                        lastScanCount = data.scans_today;
-                        console.log('Updated scan count from', oldCount, 'to', data.scans_today);
                     }
                 })
                 .catch(error => {
@@ -574,11 +579,30 @@
             channel.bind('new-scan', function(data) {
                 console.log('Menerima data scan baru via Pusher:', data);
                 
+                // Prevent duplicate processing
+                const scanId = data.scan ? data.scan.id : null;
+                if (scanId && window.lastProcessedScanId === scanId) {
+                    console.log('Duplicate scan detected, skipping:', scanId);
+                    return;
+                }
+                
                 const counter = document.getElementById('scans-today');
                 if (counter && data.scans_today !== undefined) {
-                    counter.textContent = data.scans_today;
+                    const currentCount = parseInt(counter.textContent) || 0;
+                    const newCount = data.scans_today;
+                    
+                    // Always update with exact count from server
+                    counter.textContent = newCount;
                     counter.classList.add('pulse-animation');
                     setTimeout(() => counter.classList.remove('pulse-animation'), 1000);
+                    
+                    // Show increment badge
+                    const badge = document.getElementById('new-scan-badge');
+                    if (badge && data.increment) {
+                        badge.textContent = `+${data.increment}`;
+                        badge.classList.remove('hidden');
+                        setTimeout(() => badge.classList.add('hidden'), 3000);
+                    }
                 }
 
                 const scanChange = document.getElementById('scan-change');
@@ -591,6 +615,11 @@
                     const isPositive = percentageChange >= 0;
                     scanChange.className = `text-sm ${isPositive ? 'text-green-600' : 'text-red-600'} font-medium`;
                     scanChange.innerHTML = `${isPositive ? '↑' : '↓'} ${Math.abs(percentageChange)}%`;
+                }
+                
+                // Mark scan as processed
+                if (scanId) {
+                    window.lastProcessedScanId = scanId;
                 }
 
                 // Update daftar scan terbaru
@@ -678,21 +707,20 @@
 <script>
 function confirmResetPoints() {
     Swal.fire({
-        title: 'Reset Semua Poin?',
-        text: "Apakah Anda yakin ingin mereset semua poin driver ke 0? Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data reward.",
+        title: 'Reset Semua Data Sistem?',
+        text: "Apakah Anda yakin ingin mereset SEMUA data sistem ke 0? Ini termasuk: poin driver, transaksi, data pasien, dan reward. Tindakan ini tidak dapat dibatalkan!",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
         cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Ya, Reset Semua!',
-        cancelButtonText: 'Batal',
-        reverseButtons: true
+        confirmButtonText: 'Ya, Reset Semua Data!',
+        cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
             // Tampilkan loading
             Swal.fire({
                 title: 'Memproses...',
-                text: 'Sedang mereset semua poin driver',
+                text: 'Sedang mereset semua data sistem',
                 allowOutsideClick: false,
                 didOpen: () => {
                     Swal.showLoading();
@@ -712,17 +740,17 @@ function confirmResetPoints() {
                 if (data.success) {
                     Swal.fire({
                         title: 'Berhasil!',
-                        text: data.message,
+                        text: 'Semua data sistem berhasil direset ke 0',
                         icon: 'success',
                         confirmButtonColor: '#28a745'
                     }).then(() => {
-                        // Refresh halaman untuk update data
+                        // Reload halaman untuk menampilkan data terbaru
                         window.location.reload();
                     });
                 } else {
                     Swal.fire({
                         title: 'Error!',
-                        text: data.message,
+                        text: data.message || 'Terjadi kesalahan saat mereset data',
                         icon: 'error',
                         confirmButtonColor: '#dc3545'
                     });
@@ -732,7 +760,7 @@ function confirmResetPoints() {
                 console.error('Error:', error);
                 Swal.fire({
                     title: 'Error!',
-                    text: 'Terjadi kesalahan saat mereset poin',
+                    text: 'Terjadi kesalahan saat mereset data sistem',
                     icon: 'error',
                     confirmButtonColor: '#dc3545'
                 });

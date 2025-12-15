@@ -78,6 +78,9 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('patient')->name('patient.')->group(function () {
         Route::get('/', [App\Http\Controllers\PatientController::class, 'index'])->name('index');
         Route::get('/{id}', [App\Http\Controllers\PatientController::class, 'show'])->name('show');
+        Route::get('/{patient}/edit', [App\Http\Controllers\PatientController::class, 'edit'])->name('edit');
+        Route::put('/{patient}', [App\Http\Controllers\PatientController::class, 'update'])->name('update');
+        Route::delete('/{patient}', [App\Http\Controllers\PatientController::class, 'destroy'])->name('destroy');
     });
     
     // Reward Routes

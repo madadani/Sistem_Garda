@@ -18,12 +18,27 @@ class DashboardController extends Controller
         $totalPatients = Patient::count();
         $totalPoints = Driver::sum('total_points');
         
-        // Hitung untuk hari ini
+        // Hitung untuk hari ini dengan logic yang sama dengan ScanController
         $today = Carbon::today();
         $yesterday = Carbon::yesterday();
         
-        $scansToday = Transaction::whereDate('scan_time', $today)->count();
-        $scansYesterday = Transaction::whereDate('scan_time', $yesterday)->count();
+        $scansToday = Transaction::whereDate('scan_time', $today)
+            ->where('status', 'CONFIRMED')
+            ->whereHas('patient', function($q) {
+                $q->whereNotNull('patient_name')
+                  ->where('patient_name', '!=', '')
+                  ->whereNotNull('patient_condition')
+                  ->where('patient_condition', '!=', '');
+            })->count();
+            
+        $scansYesterday = Transaction::whereDate('scan_time', $yesterday)
+            ->where('status', 'CONFIRMED')
+            ->whereHas('patient', function($q) {
+                $q->whereNotNull('patient_name')
+                  ->where('patient_name', '!=', '')
+                  ->whereNotNull('patient_condition')
+                  ->where('patient_condition', '!=', '');
+            })->count();
         
         $newDriversToday = Driver::whereDate('created_at', $today)->count();
         $newPatientsToday = Patient::whereDate('created_at', $today)->count();
@@ -58,15 +73,21 @@ class DashboardController extends Controller
             // Hapus semua reward records
             Reward::query()->delete();
             
+            // Hapus semua transaksi
+            Transaction::query()->delete();
+            
+            // Hapus semua data pasien
+            Patient::query()->delete();
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Semua poin driver berhasil direset ke 0'
+                'message' => 'Semua data sistem berhasil direset ke 0'
             ]);
             
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mereset poin: ' . $e->getMessage()
+                'message' => 'Gagal mereset data: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -117,9 +138,28 @@ class DashboardController extends Controller
         $today = Carbon::today();
         $yesterday = Carbon::yesterday();
         
+        // Gunakan logic yang sama dengan ScanController untuk konsistensi
+        $queryToday = Transaction::whereDate('scan_time', $today)
+            ->where('status', 'CONFIRMED')
+            ->whereHas('patient', function($q) {
+                $q->whereNotNull('patient_name')
+                  ->where('patient_name', '!=', '')
+                  ->whereNotNull('patient_condition')
+                  ->where('patient_condition', '!=', '');
+            });
+            
+        $queryYesterday = Transaction::whereDate('scan_time', $yesterday)
+            ->where('status', 'CONFIRMED')
+            ->whereHas('patient', function($q) {
+                $q->whereNotNull('patient_name')
+                  ->where('patient_name', '!=', '')
+                  ->whereNotNull('patient_condition')
+                  ->where('patient_condition', '!=', '');
+            });
+        
         return response()->json([
-            'scans_today' => Transaction::whereDate('scan_time', $today)->count(),
-            'scans_yesterday' => Transaction::whereDate('scan_time', $yesterday)->count()
+            'scans_today' => $queryToday->count(),
+            'scans_yesterday' => $queryYesterday->count()
         ]);
     }
     

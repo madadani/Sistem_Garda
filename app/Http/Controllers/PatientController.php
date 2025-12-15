@@ -43,4 +43,52 @@ class PatientController extends Controller
         
         return view('patient.show', compact('patient'));
     }
+
+    /**
+     * Remove the specified patient from storage
+     */
+    public function destroy(Patient $patient)
+    {
+        try {
+            $patient->delete();
+            return redirect()->route('patient.index')->with('success', 'Data pasien berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->route('patient.index')->with('error', 'Gagal menghapus data pasien. Silakan coba lagi.');
+        }
+    }
+
+    /**
+     * Show the form for editing the specified patient
+     */
+    public function edit(Patient $patient)
+    {
+        $patient->load(['transaction.driver']);
+        return view('patient.edit', compact('patient'));
+    }
+
+    /**
+     * Update the specified patient in storage
+     */
+    public function update(Request $request, Patient $patient)
+    {
+        $request->validate([
+            'patient_name' => 'nullable|string|max:255',
+            'patient_condition' => 'nullable|string|max:1000',
+            'destination' => 'required|in:IGD,Ponek',
+            'arrival_time' => 'required|date',
+        ]);
+
+        try {
+            $patient->update([
+                'patient_name' => $request->patient_name,
+                'patient_condition' => $request->patient_condition,
+                'destination' => $request->destination,
+                'arrival_time' => $request->arrival_time,
+            ]);
+
+            return redirect()->route('patient.show', $patient)->with('success', 'Data pasien berhasil diperbarui.');
+        } catch (\Exception $e) {
+            return redirect()->route('patient.edit', $patient)->with('error', 'Gagal memperbarui data pasien. Silakan coba lagi.');
+        }
+    }
 }

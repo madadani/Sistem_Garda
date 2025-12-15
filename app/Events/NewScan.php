@@ -59,6 +59,28 @@ class NewScan implements ShouldBroadcast
      */
     public function broadcastWith()
     {
+        // Gunakan logic yang sama dengan ScanController untuk konsistensi
+        $today = today();
+        $yesterday = today()->subDay();
+        
+        $scansToday = \App\Models\Transaction::whereDate('scan_time', $today)
+            ->where('status', 'CONFIRMED')
+            ->whereHas('patient', function($q) {
+                $q->whereNotNull('patient_name')
+                  ->where('patient_name', '!=', '')
+                  ->whereNotNull('patient_condition')
+                  ->where('patient_condition', '!=', '');
+            })->count();
+            
+        $scansYesterday = \App\Models\Transaction::whereDate('scan_time', $yesterday)
+            ->where('status', 'CONFIRMED')
+            ->whereHas('patient', function($q) {
+                $q->whereNotNull('patient_name')
+                  ->where('patient_name', '!=', '')
+                  ->whereNotNull('patient_condition')
+                  ->where('patient_condition', '!=', '');
+            })->count();
+        
         return [
             'scan' => [
                 'id' => $this->scan->id,
@@ -68,8 +90,9 @@ class NewScan implements ShouldBroadcast
                 'status' => $this->scan->status,
                 'created_at' => $this->scan->created_at->toDateTimeString()
             ],
-            'scans_today' => \App\Models\Transaction::whereDate('scan_time', today())->count(),
-            'scans_yesterday' => \App\Models\Transaction::whereDate('scan_time', today()->subDay())->count()
+            'scans_today' => $scansToday,
+            'scans_yesterday' => $scansYesterday,
+            'increment' => 1
         ];
     }
 }
