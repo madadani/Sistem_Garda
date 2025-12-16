@@ -68,6 +68,12 @@ class DriverPointController extends Controller
      */
     public function scanTransaction($driverIdCard = null)
     {
+        // Handle request untuk membersihkan session data
+        if (request()->isMethod('post') && request()->get('action') === 'clear_session_data') {
+            session()->forget('patient_input_data');
+            return response()->json(['success' => true]);
+        }
+        
         // Jika tidak ada ID card, redirect ke halaman landing
         if (!$driverIdCard) {
             return redirect()->route('scan.landing')
@@ -131,6 +137,9 @@ class DriverPointController extends Controller
 
         // Simpan data ke session untuk ditampilkan di halaman validasi
         session(['patient_data' => $validated]);
+        
+        // Simpan data ke session untuk pengembalian ke halaman input
+        session(['patient_input_data' => $validated]);
 
         // Tampilkan halaman validasi
         return view('driver.validate-patient', [
@@ -164,6 +173,9 @@ class DriverPointController extends Controller
             'destination' => $validated['destination'],
             'arrival_time' => now(),
         ]);
+
+        // Bersihkan session patient_input_data setelah data tersimpan
+        session()->forget('patient_input_data');
 
         // Berikan poin hanya jika data pasien lengkap
         if ($hasCompletePatientData) {

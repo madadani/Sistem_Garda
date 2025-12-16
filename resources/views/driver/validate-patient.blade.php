@@ -136,7 +136,7 @@
                 <!-- Tombol Aksi -->
                 <div class="flex justify-between space-x-3 gap-6">
                     <button type="button" 
-                            onclick="window.location.href='{{ route('driver.scan', $driver->driver_id_card) }}'"
+                            onclick="goBackToInput()"
                             class="px-6 py-2.5 bg-gray-200/90 backdrop-blur-sm text-gray-700 font-medium rounded-lg hover:bg-gray-300/90 transition-colors flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -176,5 +176,10 @@ document.addEventListener('DOMContentLoaded', function() {
     //     }
     // });
 });
+
+function goBackToInput() {
+    // Data sudah tersimpan di session dari controller, langsung navigasi
+    window.location.href = '{{ route('driver.scan', $driver->driver_id_card) }}';
+}
 </script>
 @endsection

@@ -117,12 +117,12 @@
                 @csrf
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pasien</label>
-                    <input type="text" name="patient_name" value="{{ old('patient_name') }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Masukkan nama pasien">
+                    <input type="text" name="patient_name" value="{{ old('patient_name') ?? session('patient_input_data.patient_name') }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Masukkan nama pasien">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Keluhan</label>
-                    <textarea name="patient_condition" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Tuliskan keluhan utama pasien">{{ old('patient_condition') }}</textarea>
+                    <textarea name="patient_condition" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Tuliskan keluhan utama pasien">{{ old('patient_condition') ?? session('patient_input_data.patient_condition') }}</textarea>
                 </div>
 
                 <div>
@@ -132,7 +132,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="p-4 border-2 border-gray-200 rounded-xl">
                             <label class="flex items-center cursor-pointer">
-                                <input type="radio" name="destination" value="IGD" {{ old('destination') === 'IGD' ? 'checked' : '' }} required class="mr-3 text-primary-600 focus:ring-primary-500">
+                                <input type="radio" name="destination" value="IGD" {{ old('destination') === 'IGD' || (session('patient_input_data.destination') === 'IGD') ? 'checked' : '' }} required class="mr-3 text-primary-600 focus:ring-primary-500">
                                 <div class="flex-1 flex items-center">
                                     <svg class="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
@@ -143,7 +143,7 @@
                         </div>
                         <div class="p-4 border-2 border-gray-200 rounded-xl">
                             <label class="flex items-center cursor-pointer">
-                                <input type="radio" name="destination" value="Ponek" {{ old('destination') === 'Ponek' ? 'checked' : '' }} required class="mr-3 text-primary-600 focus:ring-primary-500">
+                                <input type="radio" name="destination" value="Ponek" {{ old('destination') === 'Ponek' || (session('patient_input_data.destination') === 'Ponek') ? 'checked' : '' }} required class="mr-3 text-primary-600 focus:ring-primary-500">
                                 <div class="flex-1 flex items-center">
                                     <svg class="w-6 h-6 mr-3" style="color: #ec4899;" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -327,6 +327,21 @@
         // Otomatis buka form data pasien setelah halaman scan sukses muncul
         @if(!session('success'))
             openPatientModal();
+            
+            // Bersihkan session patient_input_data setelah modal dibuka
+            // Ini mencegah data tetap tersimpan setelah user mengedit
+            setTimeout(() => {
+                fetch('{{ route("driver.scan", $driver->driver_id_card) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ action: 'clear_session_data' })
+                }).catch(() => {
+                    // Ignore error if request fails
+                });
+            }, 1000);
         @endif
     });
 </script>
