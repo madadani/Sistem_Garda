@@ -45,6 +45,10 @@ Route::get('/admin', [AuthController::class, 'showLoginForm'])->name('login')->m
 Route::post('/admin', [AuthController::class, 'login'])->middleware('guest');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+// API routes untuk dashboard (tanpa auth)
+Route::get('/api/dashboard/monthly-patient-data', [\App\Http\Controllers\DashboardController::class, 'monthlyPatientData'])->name('api.dashboard.monthly-patient-data');
+Route::get('/api/dashboard/patient-destination-data', [\App\Http\Controllers\DashboardController::class, 'patientDestinationData'])->name('api.dashboard.patient-destination-data');
+
 // Protected Routes
 Route::middleware(['auth'])->group(function () {
     // Dashboard
