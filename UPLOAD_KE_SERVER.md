@@ -37,7 +37,7 @@ Atau via FTP/cPanel, set permission:
 ### 3. File .env Sudah Dikonfigurasi
 File `.env` sudah diupdate dengan:
 ```
-APP_URL=http://192.168.100.3:81/garda
+APP_URL=http://192.168.100.3:81/garda/public
 ```
 
 ### 4. File .htaccess

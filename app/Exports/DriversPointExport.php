@@ -48,7 +48,8 @@ class DriversPointExport implements FromCollection, WithHeadings, WithMapping
                     if ($this->year) {
                         $query->whereYear('scan_time', $this->year);
                     }
-                    $query->with('patient');
+                    // Hanya ambil transaksi yang memiliki data pasien (transaksi berhasil)
+                    $query->has('patient')->with('patient');
                 }
             ])
                 ->whereIn('id', $driverIdArray)
@@ -78,12 +79,13 @@ class DriversPointExport implements FromCollection, WithHeadings, WithMapping
                 // Tambahkan data pasien yang dibawa
                 // Tambahkan data pasien yang dibawa / transaksi scan
                 foreach ($driver->transactions as $transaction) {
-                    $patientName = $transaction->patient->patient_name ?? 'Data Pasien Tidak ditemukan/Terhapus';
+                    $patientName = $transaction->patient->patient_name ?? 'Transaksi Tanpa Pasien';
                     $patientCondition = $transaction->patient->patient_condition ?? '-';
                     $destination = $transaction->patient->destination ?? '-';
-                    $arrivalTime = ($transaction->patient && $transaction->patient->arrival_time)
-                        ? $transaction->patient->arrival_time->format('d/m/Y H:i')
-                        : '-';
+
+                    // Gunakan Waktu Scan sebagai waktu utama karena filter berdasarkan Scan Time
+                    // Jika ada arrival_time pasien, bisa ditampilkan juga, tapi untuk konsistensi filter gunakan scan_time
+                    $timeDisplay = $transaction->scan_time ? $transaction->scan_time->format('d/m/Y H:i') : '-';
 
                     $exportData[] = [
                         'type' => 'patient_data',
@@ -95,7 +97,7 @@ class DriversPointExport implements FromCollection, WithHeadings, WithMapping
                         'patient_name' => $patientName,
                         'patient_condition' => $patientCondition,
                         'destination' => $destination,
-                        'arrival_time' => $arrivalTime,
+                        'arrival_time' => $timeDisplay, // Ini sekarang diisi Waktu Scan
                         'scan_time' => $transaction->scan_time ? $transaction->scan_time->format('d-m-Y H:i') : '-',
                         'points_awarded' => $transaction->points_awarded ?? 0,
                         'status' => $transaction->status ?? '-'
@@ -184,7 +186,7 @@ class DriversPointExport implements FromCollection, WithHeadings, WithMapping
                 'Nama Pasien',
                 'Keluhan',
                 'Tujuan',
-                'Waktu Kedatangan'
+                'Waktu Scan'
             ];
         } else {
             // Untuk export semua driver (format sederhana)

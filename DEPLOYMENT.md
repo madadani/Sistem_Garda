@@ -30,7 +30,7 @@
 
 3. **Update file `.env`**:
    ```env
-   APP_URL=https://yourdomain.com/garda
+   APP_URL=http://192.168.100.3:81/garda/public
    ```
 
 4. **Akses aplikasi**:
@@ -99,7 +99,7 @@
 
 5. **Update `.env`**:
    ```env
-   APP_URL=https://yourdomain.com/garda
+   APP_URL=http://192.168.100.3:81/garda/public
    ```
 
 6. **Copy file `.htaccess.subdirectory`** ke `/public_html/garda/.htaccess`
