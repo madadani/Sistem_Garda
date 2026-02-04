@@ -12,10 +12,14 @@ class DriversPointExport implements FromCollection, WithHeadings, WithMapping
 {
     protected $driverIds;
     protected $customCollection;
+    protected $month;
+    protected $year;
 
-    public function __construct($driverIds = null)
+    public function __construct($driverIds = null, $month = null, $year = null)
     {
         $this->driverIds = $driverIds;
+        $this->month = $month;
+        $this->year = $year;
         $this->customCollection = null;
     }
 
@@ -34,14 +38,24 @@ class DriversPointExport implements FromCollection, WithHeadings, WithMapping
         if ($this->driverIds) {
             // Handle single driver ID or array of driver IDs
             $driverIdArray = is_array($this->driverIds) ? $this->driverIds : [$this->driverIds];
-            
+
             // Ambil data driver dengan semua transaksi dan pasien yang dibawa
-            $drivers = Driver::with(['transactions.patient'])
-                            ->whereIn('id', $driverIdArray)
-                            ->get();
-            
+            $drivers = Driver::with([
+                'transactions' => function ($query) {
+                    if ($this->month) {
+                        $query->whereMonth('scan_time', $this->month);
+                    }
+                    if ($this->year) {
+                        $query->whereYear('scan_time', $this->year);
+                    }
+                    $query->with('patient');
+                }
+            ])
+                ->whereIn('id', $driverIdArray)
+                ->get();
+
             $exportData = [];
-            
+
             foreach ($drivers as $driver) {
                 // Tambahkan informasi driver di baris pertama
                 $exportData[] = [
@@ -82,7 +96,7 @@ class DriversPointExport implements FromCollection, WithHeadings, WithMapping
 
             return collect($exportData);
         }
-        
+
         // Untuk export semua driver (format sederhana)
         return Driver::select('driver_id_card', 'name', 'instansi', 'total_points', 'created_at')->get();
     }

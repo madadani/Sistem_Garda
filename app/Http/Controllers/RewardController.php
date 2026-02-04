@@ -12,13 +12,22 @@ use App\Exports\DriversPointExport;
 
 class RewardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        
-        // 1. Ambil SEMUA data reward dengan eager load 'driver', diurutkan berdasarkan tanggal terbaru
-        // Catatan: Karena kita akan mengelompokkan data di memori, kita mengambil semua data terkait.
-        // Jika data reward sangat besar, pertimbangkan untuk menggunakan DB::raw atau query builder.
-        $rawRewards = Reward::with('driver')->orderByDesc('created_at')->get();
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        // 1. Ambil data reward dengan eager load 'driver', difilter berdasarkan bulan dan tahun jika ada
+        $query = Reward::with('driver');
+
+        if ($month) {
+            $query->whereMonth('created_at', $month);
+        }
+        if ($year) {
+            $query->whereYear('created_at', $year);
+        }
+
+        $rawRewards = $query->orderByDesc('created_at')->get();
 
         // 2. Kelompokkan data berdasarkan driver_id
         $groupedRewards = $rawRewards->groupBy('driver_id');
@@ -26,10 +35,10 @@ class RewardController extends Controller
         // 3. Olah setiap grup untuk mendapatkan satu baris ringkasan per driver
         $rewardsByDriver = $groupedRewards->map(function ($driverRewards, $driverId) {
             // Ambil data pertama dari grup untuk informasi dasar driver
-            $firstReward = $driverRewards->first(); 
-            
+            $firstReward = $driverRewards->first();
+
             // Hitung total poin yang dihabiskan dan total reward yang dikonversi
-            $totalPointsSpent = $driverRewards->sum('points_spent'); 
+            $totalPointsSpent = $driverRewards->sum('points_spent');
             $totalConvertPoint = $driverRewards->sum('convert_point');
 
             // Ambil data reward terbaru untuk menentukan status dan tanggal terakhir
@@ -45,24 +54,19 @@ class RewardController extends Controller
                 'latest_date' => $latestReward->created_at, // Tanggal transaksi reward terbaru
                 'original_driver' => $firstReward->driver, // Objek Driver untuk keperluan export
                 // Kirim koleksi reward asli jika diperlukan di Blade (misalnya untuk modal detail)
-                'driver_rewards' => $driverRewards, 
+                'driver_rewards' => $driverRewards,
             ];
         })
-        // Konversi collection hasil map menjadi objek LengthAwarePaginator untuk mempertahankan fungsi paginate/links
-        // Namun, karena kita melakukan grouping, pagination normal akan menjadi sulit.
-        // Untuk kemudahan, kita kirim Collection biasa dan hilangkan pagination sementara.
-        // Jika pagination wajib, kita perlu menggunakan Paginator::make atau melakukan pagination manual.
-        ->values();
+            ->values();
 
         // Ambil daftar driver untuk form Export
         $drivers = Driver::orderBy('name')->get();
-        
-        // Catatan: Statistik lama (totalRewards, totalPointsUsed, dll) dihilangkan
-        // karena tidak digunakan dalam compact, Anda bisa menambahkannya kembali jika diperlukan.
 
         return view('dashboard.reward', [
             'rewards' => $rewardsByDriver, // Menggunakan data yang sudah di-group
             'drivers' => $drivers,
+            'selectedMonth' => $month,
+            'selectedYear' => $year,
         ]);
     }
 
@@ -71,7 +75,7 @@ class RewardController extends Controller
         $validated = $request->validate([
             'driver_id' => 'required|exists:drivers,id',
             // Pastikan Anda menangani validasi decimal dengan benar tergantung pada versi PHP/Laravel Anda
-            'convert_point' => 'required|numeric|min:0', 
+            'convert_point' => 'required|numeric|min:0',
             'points_spent' => 'required|integer|min:1',
             'status' => 'required|in:pending,completed,rejected',
         ]);
@@ -100,19 +104,19 @@ class RewardController extends Controller
         ]);
 
         $driver = Driver::findOrFail($request->driver_id);
-        
+
         // Hitung total poin yang sudah ditukar dari kolom points_redeemed
         $totalPointsSpent = $driver->points_redeemed ?? 0;
         $remainingPoints = $driver->total_points - $totalPointsSpent;
-        
+
         // Validasi saldo poin cukup
         if ($remainingPoints < $request->points) {
             return back()->with('error', 'Saldo poin tidak mencukupi. Sisa poin yang dapat ditukar: ' . $remainingPoints);
         }
-        
+
         // Hitung nilai tukar (1 poin = Rp 50.000)
         $convertPoint = $request->points * 50000;
-        
+
         try {
             // Buat catatan penukaran poin
             $reward = Reward::create([
@@ -133,14 +137,14 @@ class RewardController extends Controller
 
             // Broadcast perubahan poin driver secara realtime
             broadcast(new DriverPointsUpdated($driver->id, $driver->total_points, $remainingPointsUpdated));
-            
+
             return redirect()
                 ->route('driver.index')
                 ->with([
                     'success' => 'Poin berhasil ditukarkan senilai Rp ' . number_format($convertPoint, 0, ',', '.'),
                     'refreshed' => true
                 ]);
-                
+
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -150,14 +154,16 @@ class RewardController extends Controller
     public function export(Request $request)
     {
         $driverId = $request->query('driver_id');
-        
+        $month = $request->query('month');
+        $year = $request->query('year');
+
         if (!$driverId) {
             return redirect()->route('reward.index')->with('error', 'Silakan pilih driver terlebih dahulu');
         }
         // Try to find driver to build a friendly filename
         $driver = Driver::find($driverId);
         if ($driver) {
-            $rawName = $driver->name ?? ('driver_'.$driverId);
+            $rawName = $driver->name ?? ('driver_' . $driverId);
             // transliterate Unicode names to ASCII when possible
             if (function_exists('iconv')) {
                 $trans = @iconv('UTF-8', 'ASCII//TRANSLIT', $rawName);
@@ -171,26 +177,42 @@ class RewardController extends Controller
             $safe = trim($safe, '_');
             $safe = strtolower($safe);
             if (empty($safe)) {
-                $safe = 'driver_'.$driverId;
+                $safe = 'driver_' . $driverId;
             }
-            $filename = $safe . '_points_' . $driverId . '.xlsx';
+            $filename = $safe . '_points_' . $driverId;
+            if ($month)
+                $filename .= '_m' . $month;
+            if ($year)
+                $filename .= '_y' . $year;
+            $filename .= '.xlsx';
         } else {
             $filename = 'driver_' . $driverId . '_points.xlsx';
         }
 
-        return Excel::download(new DriversPointExport([$driverId]), $filename);
+        return Excel::download(new DriversPointExport([$driverId], $month, $year), $filename);
     }
 
     // Metode export untuk semua driver yang ada di tabel reward
-    public function exportAll()
+    public function exportAll(Request $request)
     {
+        $month = $request->query('month');
+        $year = $request->query('year');
+
         // Ambil data reward yang sudah di-group (sama seperti di index method)
-        $rawRewards = Reward::with('driver')->orderByDesc('created_at')->get();
+        $query = Reward::with('driver');
+        if ($month) {
+            $query->whereMonth('created_at', $month);
+        }
+        if ($year) {
+            $query->whereYear('created_at', $year);
+        }
+
+        $rawRewards = $query->orderByDesc('created_at')->get();
         $groupedRewards = $rawRewards->groupBy('driver_id');
-        
+
         // Kelompokkan data berdasarkan driver_id dan ambil driver yang punya reward
         $rewardsByDriver = $groupedRewards->map(function ($driverRewards, $driverId) {
-            $firstReward = $driverRewards->first(); 
+            $firstReward = $driverRewards->first();
             return (object) [
                 'id' => $driverId,
                 'driver_name' => $firstReward->driver->name ?? '-',
@@ -205,16 +227,17 @@ class RewardController extends Controller
 
         // Ambil hanya driver ID yang ada di reward
         $driverIds = $rewardsByDriver->pluck('id')->toArray();
-        
+
         // Buat instance export class dengan driver IDs yang difilter
-        $export = new DriversPointExport($driverIds);
-        
-        // Override collection method untuk menggunakan format sederhana
-        $export->setCollection(Driver::whereIn('id', $driverIds)
-                                ->select('driver_id_card', 'name', 'instansi', 'total_points', 'created_at')
-                                ->get());
-        
-        $filename = 'reward_drivers_points_' . date('Y-m-d') . '.xlsx';
+        $export = new DriversPointExport($driverIds, $month, $year);
+
+        $filename = 'reward_drivers_points';
+        if ($month)
+            $filename .= '_m' . $month;
+        if ($year)
+            $filename .= '_y' . $year;
+        $filename .= '_' . date('Y-m-d') . '.xlsx';
+
         return Excel::download($export, $filename);
     }
 }
