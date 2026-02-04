@@ -57,13 +57,16 @@ class DriversPointExport implements FromCollection, WithHeadings, WithMapping
             $exportData = [];
 
             foreach ($drivers as $driver) {
+                // Hitung total poin dari transaksi yang terfilter
+                $filteredTotalPoints = $driver->transactions->sum('points_awarded');
+
                 // Tambahkan informasi driver di baris pertama
                 $exportData[] = [
                     'type' => 'driver_info',
                     'driver_id_card' => $driver->driver_id_card,
                     'name' => $driver->name,
                     'instansi' => $driver->instansi,
-                    'total_points' => $driver->total_points,
+                    'total_points' => $filteredTotalPoints, // Total poin dari transaksi terfilter
                     'patient_name' => '',
                     'patient_medical_record' => '',
                     'scan_time' => '',
