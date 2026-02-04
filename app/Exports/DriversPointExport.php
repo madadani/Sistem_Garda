@@ -76,24 +76,30 @@ class DriversPointExport implements FromCollection, WithHeadings, WithMapping
                 ];
 
                 // Tambahkan data pasien yang dibawa
+                // Tambahkan data pasien yang dibawa / transaksi scan
                 foreach ($driver->transactions as $transaction) {
-                    if ($transaction->patient) {
-                        $exportData[] = [
-                            'type' => 'patient_data',
-                            'driver_id_card' => $driver->driver_id_card, // Tetap tampilkan ID driver di setiap baris pasien
-                            'name' => $driver->name, // Tetap tampilkan nama driver
-                            'instansi' => $driver->instansi,
-                            'total_points' => '', // Kosongkan untuk baris pasien
-                            'transaction_id' => $transaction->transaction_id ?? '-',
-                            'patient_name' => $transaction->patient->patient_name ?? '-',
-                            'patient_condition' => $transaction->patient->patient_condition ?? '-',
-                            'destination' => $transaction->patient->destination ?? '-',
-                            'arrival_time' => $transaction->patient->arrival_time ? $transaction->patient->arrival_time->format('d/m/Y H:i') : '-',
-                            'scan_time' => $transaction->scan_time ? $transaction->scan_time->format('d-m-Y H:i') : '-',
-                            'points_awarded' => $transaction->points_awarded ?? 0,
-                            'status' => $transaction->status ?? '-'
-                        ];
-                    }
+                    $patientName = $transaction->patient->patient_name ?? 'Data Pasien Tidak ditemukan/Terhapus';
+                    $patientCondition = $transaction->patient->patient_condition ?? '-';
+                    $destination = $transaction->patient->destination ?? '-';
+                    $arrivalTime = ($transaction->patient && $transaction->patient->arrival_time)
+                        ? $transaction->patient->arrival_time->format('d/m/Y H:i')
+                        : '-';
+
+                    $exportData[] = [
+                        'type' => 'patient_data',
+                        'driver_id_card' => $driver->driver_id_card,
+                        'name' => $driver->name,
+                        'instansi' => $driver->instansi,
+                        'total_points' => '',
+                        'transaction_id' => $transaction->transaction_id ?? '-',
+                        'patient_name' => $patientName,
+                        'patient_condition' => $patientCondition,
+                        'destination' => $destination,
+                        'arrival_time' => $arrivalTime,
+                        'scan_time' => $transaction->scan_time ? $transaction->scan_time->format('d-m-Y H:i') : '-',
+                        'points_awarded' => $transaction->points_awarded ?? 0,
+                        'status' => $transaction->status ?? '-'
+                    ];
                 }
             }
 
