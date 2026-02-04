@@ -298,14 +298,15 @@
             }
 
             try {
-                const response = await fetch(`api/check-driver/${cleanId}`);
+                const response = await fetch(`{{ url('api/check-driver') }}/${cleanId}`);
                 const data = await response.json();
 
                 if (data.exists) {
-                    window.location.href = `/driver/scan/${cleanId}`;
+                    let url = "{{ route('driver.scan', ':id') }}";
+                    window.location.href = url.replace(':id', cleanId);
                 } else {
                     // Langsung redirect ke halaman driver-not-found
-                    window.location.href = `/driver-not-found?driver_id=${cleanId}`;
+                    window.location.href = "{{ url('driver-not-found') }}?driver_id=" + cleanId;
                 }
             } catch (error) {
                 console.error('Error:', error);

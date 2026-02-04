@@ -29,6 +29,6 @@ class AppServiceProvider extends ServiceProvider
         date_default_timezone_set('Asia/Jakarta');
 
         // Untuk deployment di subdirectory (misal: domain.com/garda)
-        \URL::forceRootUrl(config('app.url'));
+        // \URL::forceRootUrl(config('app.url'));
     }
 }
