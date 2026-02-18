@@ -21,7 +21,7 @@ class DriverPointController extends Controller
         try {
             // Mencari driver berdasarkan ID card
             $driver = Driver::where('driver_id_card', $driverIdCard)->firstOrFail();
-            
+
             // Mengambil transaksi terakhir
             $latestTransaction = $driver->transactions()
                 ->where('status', 'CONFIRMED')
@@ -30,6 +30,7 @@ class DriverPointController extends Controller
 
             // Mengambil semua transaksi yang sudah dikonfirmasi dengan relasi patient
             $transactions = $driver->transactions()
+                ->has('patient') // Hanya yang punya data pasien
                 ->with('patient') // Menyertakan relasi patient
                 ->where('status', 'CONFIRMED')
                 ->orderBy('scan_time', 'desc')
@@ -43,17 +44,17 @@ class DriverPointController extends Controller
 
         } catch (\Exception $e) {
             // Jika terjadi error, tetap tampilkan halaman dengan data kosong
-            $driver = (object)[
+            $driver = (object) [
                 'name' => 'Driver',
                 'driver_id_card' => $driverIdCard,
                 'phone_number' => '',
                 'total_points' => 0,
                 'total_confirmed_transactions' => 0
             ];
-            
+
             $transactions = collect([]);
             $latestTransaction = null;
-            
+
             return view('driver.point', [
                 'driver' => $driver,
                 'latestTransaction' => $latestTransaction,
@@ -73,16 +74,16 @@ class DriverPointController extends Controller
             session()->forget('patient_input_data');
             return response()->json(['success' => true]);
         }
-        
+
         // Jika tidak ada ID card, redirect ke halaman landing
         if (!$driverIdCard) {
             return redirect()->route('scan.landing')
                 ->with('error', 'ID Card tidak ditemukan');
         }
-        
+
         // Bersihkan input
         $cleanId = preg_replace('/[^0-9]/', '', $driverIdCard);
-        
+
         // Cari driver
         $driver = Driver::where('driver_id_card', 'LIKE', "%{$cleanId}%")
             ->orWhere('phone_number', 'LIKE', "%{$cleanId}%")
@@ -92,38 +93,16 @@ class DriverPointController extends Controller
             return redirect()->route('driver.not.found');
         }
 
-        // Cek transaksi terakhir
-        $latestTransaction = Transaction::where('driver_id', $driver->id)
-            ->latest()
-            ->first();
-
-        // Buat transaksi baru dengan status CONFIRMED untuk semua scan
-        // Selalu buat transaksi baru setiap scan untuk mencatat setiap kunjungan
-        $transaction = Transaction::create([
-            'transaction_id' => 'TRX-' . strtoupper(Str::random(10)),
-            'driver_id' => $driver->id,
-            'status' => 'CONFIRMED',
-            'scan_time' => now(),
-            'points_awarded' => 1,
-        ]);
-        
-        // Kirim event untuk real-time update
-        event(new NewScan($transaction));
-        
-        // Set latestTransaction ke transaksi yang baru dibuat
-        $latestTransaction = $transaction;
-        
-        // Tampilkan halaman sukses dengan data driver dan transaksi terakhir
+        // Tampilkan halaman sukses dengan data driver
+        // Tidak ada transaksi yang dibuat di sini
         return view('driver.scan-success', [
             'driver' => $driver,
-            'transaction' => $latestTransaction,
-            'latestTransaction' => $latestTransaction
         ]);
     }
 
-    public function validatePatientData(Request $request, $transactionId)
+    public function validatePatientData(Request $request, $driverIdCard)
     {
-        $transaction = Transaction::with('driver')->findOrFail($transactionId);
+        $driver = Driver::where('driver_id_card', $driverIdCard)->firstOrFail();
 
         // Validasi input data
         $validated = $request->validate([
@@ -137,21 +116,20 @@ class DriverPointController extends Controller
 
         // Simpan data ke session untuk ditampilkan di halaman validasi
         session(['patient_data' => $validated]);
-        
+
         // Simpan data ke session untuk pengembalian ke halaman input
         session(['patient_input_data' => $validated]);
 
         // Tampilkan halaman validasi
         return view('driver.validate-patient', [
-            'transaction' => $transaction,
-            'driver' => $transaction->driver,
+            'driver' => $driver,
             'patientData' => $validated
         ]);
     }
 
-    public function storePatientData(Request $request, $transactionId)
+    public function storePatientData(Request $request, $driverIdCard)
     {
-        $transaction = Transaction::with('driver', 'patient')->findOrFail($transactionId);
+        $driver = Driver::where('driver_id_card', $driverIdCard)->firstOrFail();
 
         // Validasi opsional - hanya destination yang wajib
         $validated = $request->validate([
@@ -166,31 +144,39 @@ class DriverPointController extends Controller
         // Cek apakah data pasien lengkap (nama dan keluhan tidak kosong)
         $hasCompletePatientData = !empty($validated['patient_name']) && !empty($validated['patient_condition']);
 
-        // Buat atau perbarui data pasien yang terhubung dengan transaksi ini
-        $transaction->patient()->updateOrCreate([], [
-            'patient_name' => $validated['patient_name'],
-            'patient_condition' => $validated['patient_condition'],
-            'destination' => $validated['destination'],
-            'arrival_time' => now(),
-        ]);
-
-        // Bersihkan session patient_input_data setelah data tersimpan
-        session()->forget('patient_input_data');
-
-        // Berikan poin hanya jika data pasien lengkap
         if ($hasCompletePatientData) {
-            $driver = $transaction->driver;
-            $driver->increment('total_points', $transaction->points_awarded);
-
-            // Catat reward
-            Reward::create([
-                'driver_id'     => $driver->id,
-                'convert_point' => Reward::POINT_VALUE,
-                'points_spent'  => $transaction->points_awarded,
-                'status'        => 'completed',
+            // 1. Buat transaksi baru
+            $transaction = Transaction::create([
+                'transaction_id' => 'TRX-' . strtoupper(Str::random(10)),
+                'driver_id' => $driver->id,
+                'status' => 'CONFIRMED',
+                'scan_time' => now(),
+                'points_awarded' => 1,
             ]);
 
-            // Buat data notifikasi lengkap
+            // 2. Buat data pasien yang terhubung dengan transaksi ini
+            $transaction->patient()->create([
+                'patient_name' => $validated['patient_name'],
+                'patient_condition' => $validated['patient_condition'],
+                'destination' => $validated['destination'],
+                'arrival_time' => now(),
+            ]);
+
+            // 3. Increment poin driver
+            $driver->increment('total_points', $transaction->points_awarded);
+
+            // 4. Catat reward
+            Reward::create([
+                'driver_id' => $driver->id,
+                'convert_point' => Reward::POINT_VALUE,
+                'points_spent' => $transaction->points_awarded,
+                'status' => 'completed',
+            ]);
+
+            // Bersihkan session data input
+            session()->forget('patient_input_data');
+
+            // Data notifikasi untuk modal sukses
             $notificationData = [
                 'patient_name' => $validated['patient_name'],
                 'patient_condition' => $validated['patient_condition'],
@@ -203,11 +189,24 @@ class DriverPointController extends Controller
                 'points' => $transaction->points_awarded
             ];
 
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $notificationData
+                ]);
+            }
+
             return redirect()
                 ->route('driver.scan', $driver->driver_id_card)
                 ->with('success', $notificationData);
         } else {
-            // Data pasien tidak lengkap, tidak berikan poin
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data pasien tidak lengkap. Driver tidak mendapatkan poin.'
+                ], 422);
+            }
+
             return redirect()
                 ->route('driver.scan', $driver->driver_id_card)
                 ->with('info', 'Data pasien tidak lengkap. Driver tidak mendapatkan poin.');

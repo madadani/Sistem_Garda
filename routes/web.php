@@ -34,11 +34,11 @@ Route::get('/driver-not-found', function () {
 // Driver Point - View points only (QR Code 2D)
 Route::get('/driver/point/{driverIdCard}', [App\Http\Controllers\DriverPointController::class, 'showPoints'])->name('driver.point');
 // Driver Scan - Record transaction when bringing patient (Barcode 1D)
-Route::get('/driver/scan/{driverIdCard}', [App\Http\Controllers\DriverPointController::class, 'scanTransaction'])->name('driver.scan')  ->where('driverIdCard', '.*');  // Menerima nilai kosong;
+Route::get('/driver/scan/{driverIdCard}', [App\Http\Controllers\DriverPointController::class, 'scanTransaction'])->name('driver.scan')->where('driverIdCard', '.*');  // Menerima nilai kosong;
 // Driver Scan - Store patient data (public, tanpa auth)
-Route::post('/driver/scan/{transaction}/patient', [App\Http\Controllers\DriverPointController::class, 'storePatientData'])->name('driver.scan.patient');
+Route::post('/driver/scan/{driverIdCard}/patient', [App\Http\Controllers\DriverPointController::class, 'storePatientData'])->name('driver.scan.patient');
 // Driver Scan - Validate patient data before storing
-Route::post('/driver/scan/{transaction}/patient/validate', [App\Http\Controllers\DriverPointController::class, 'validatePatientData'])->name('driver.scan.patient.validate');
+Route::post('/driver/scan/{driverIdCard}/patient/validate', [App\Http\Controllers\DriverPointController::class, 'validatePatientData'])->name('driver.scan.patient.validate');
 
 // Auth Routes (login admin dipindah ke /admin)
 Route::get('/admin', [AuthController::class, 'showLoginForm'])->name('login')->middleware('guest');
@@ -60,12 +60,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/patient-chart-data', [\App\Http\Controllers\DashboardController::class, 'patientChartData'])->name('dashboard.patient-chart-data');
     Route::get('/dashboard/monthly-patient-data', [\App\Http\Controllers\DashboardController::class, 'monthlyPatientData'])->name('dashboard.monthly-patient-data');
     Route::get('/dashboard/patient-destination-data', [\App\Http\Controllers\DashboardController::class, 'patientDestinationData'])->name('dashboard.patient-destination-data');
-    
+
     // Driver Routes
     Route::get('/driver/qrcode/all', [App\Http\Controllers\DriverController::class, 'qrcodeAll'])->name('driver.qrcode.all');
     Route::get('/driver/{driver}/qrcode', [App\Http\Controllers\DriverController::class, 'qrcodeSingle'])->name('driver.qrcode.single');
     Route::resource('driver', App\Http\Controllers\DriverController::class);
-    
+
     // Scan Routes
     Route::prefix('scan')->name('scan.')->group(function () {
         Route::get('/', [App\Http\Controllers\ScanController::class, 'index'])->name('index');
@@ -74,12 +74,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/confirm/{id}', [App\Http\Controllers\ScanController::class, 'processConfirm'])->name('process');
         Route::post('/reject/{id}', [App\Http\Controllers\ScanController::class, 'reject'])->name('reject');
     });
-    
+
     // Pasien Routes
     Route::prefix('pasien')->name('pasien.')->group(function () {
         Route::get('/', [App\Http\Controllers\PatientController::class, 'index'])->name('index');
     });
-    
+
     // Patient Routes (alternative naming)
     Route::prefix('patient')->name('patient.')->group(function () {
         Route::get('/', [App\Http\Controllers\PatientController::class, 'index'])->name('index');
@@ -88,7 +88,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{patient}', [App\Http\Controllers\PatientController::class, 'update'])->name('update');
         Route::delete('/{patient}', [App\Http\Controllers\PatientController::class, 'destroy'])->name('destroy');
     });
-    
+
     // Reward Routes
     Route::prefix('reward')->name('reward.')->group(function () {
         Route::get('/', [App\Http\Controllers\RewardController::class, 'index'])->name('index');
@@ -98,7 +98,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/export-all', [App\Http\Controllers\RewardController::class, 'exportAll'])->name('export-all');
         Route::post('/tukar-poin', [App\Http\Controllers\RewardController::class, 'tukarPoin'])->name('tukar-poin');
     });
-    
+
     // Point & Reward
     Route::get('/dashboard/point-reward', [\App\Http\Controllers\PointRewardController::class, 'index'])->name('dashboard.point');
     Route::get('/dashboard/point-reward/export', [\App\Http\Controllers\PointRewardController::class, 'export'])->name('dashboard.point.export');

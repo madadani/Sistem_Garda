@@ -53,7 +53,7 @@
             </div> -->
 
             <!-- Form Validation -->
-            <form action="{{ route('driver.scan.patient', $transaction->id) }}" method="POST" id="validationForm">
+            <form action="{{ route('driver.scan.patient', $driver->driver_id_card) }}" method="POST" id="validationForm">
                 @csrf
                 <input type="hidden" name="validated" value="true">
                 
@@ -124,7 +124,6 @@
                                             <div class="text-xs text-gray-500">ID Card: {{ $driver->driver_id_card }}</div>
                                             <div class="text-xs text-gray-500">No. HP: {{ $driver->phone_number ?? 'Tidak Ada' }}</div>
                                             <div class="text-xs text-gray-500">Instansi: {{ $driver->instansi ?? 'Tidak Ada' }}</div>
-                                            <div class="text-xs text-gray-500 mt-1">ID Transaksi: {{ $transaction->transaction_id }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -165,23 +164,174 @@
             </form>
         </div>
     </div>
+
+    <!-- Popup Sukses Setelah Simpan -->
+    <div id="successPopup" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+            <!-- Header Gradient -->
+            <div class="bg-gradient-to-br from-emerald-500 via-teal-500 to-green-600 px-5 py-3 text-center relative">
+                <!-- Decorative Elements -->
+                <div class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-t-2xl">
+                    <div class="absolute -top-4 -right-4 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+                    <div class="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+                </div>
+                
+                <!-- Success Icon -->
+                <div class="relative z-10 mx-auto mb-3 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg">
+                    <svg class="w-7 h-7 text-white drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                
+                <!-- Title -->
+                <h3 class="relative z-10 text-2xl font-bold text-white mb-1">Data Tersimpan</h3>
+                <p class="relative z-10 text-emerald-100 text-sm">Transaksi berhasil diproses</p>
+            </div>
+            
+            <!-- Content Area -->
+            <div class="px-8 py-6">
+                <!-- Data Pasien Section -->
+                <div class="mb-3">
+                    <div class="flex items-center mb-3 ml-2">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                        <h4 class="font-semibold text-gray-800 text-sm">Informasi Pasien</h4>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 ml-2">
+                            <div class="flex items-center pb-2">
+                                <span class="text-xs text-gray-500 font-medium w-16">Nama</span>
+                                <span class="text-sm text-gray-800 font-medium">:</span>
+                                <span id="resPatientName" class="text-sm text-gray-800 font-medium ml-2"></span>
+                            </div>
+                            <div class="flex items-center pb-2">
+                                <span class="text-xs text-gray-500 font-medium w-16">Keluhan</span>
+                                <span class="text-sm text-gray-800 font-medium">:</span>
+                                <span id="resPatientCondition" class="text-sm text-gray-800 font-medium ml-2"></span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-xs text-gray-500 font-medium w-16">Tujuan</span>
+                                <span class="text-sm text-gray-800 font-medium">:</span>
+                                <span id="resDestination" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ml-2"></span>
+                            </div>
+                    </div>
+                </div>
+                
+                <!-- Informasi Driver Section -->
+                <div class="mb-4">
+                    <div class="flex items-center mb-3 ml-2">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2">
+                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                        <h4 class="font-semibold text-gray-800 text-sm">Informasi Driver</h4>
+                    </div>
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-4 ml-2">
+                            <div class="flex items-center pb-2">
+                                <span class="text-xs text-gray-500 font-medium w-16">Nama</span>
+                                <span class="text-sm text-gray-800 font-medium">:</span>
+                                <span id="resDriverName" class="text-sm text-gray-800 font-medium ml-2"></span>
+                            </div>
+                            <div class="flex items-center pb-2">
+                                <span class="text-xs text-gray-500 font-medium w-16">ID Card</span>
+                                <span class="text-sm text-gray-800 font-medium">:</span>
+                                <span id="resDriverIdCard" class="text-sm text-gray-800 font-mono bg-white px-2 py-1 rounded ml-2"></span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-xs text-gray-500 font-medium w-16">Waktu</span>
+                                <span class="text-sm text-gray-800 font-medium">:</span>
+                                <span id="resScanTime" class="text-sm text-gray-800 font-medium ml-2"></span>
+                            </div>
+                    </div>
+                </div>
+        
+                <!-- Tombol Aksi -->
+                <div class="flex justify-center px-4">
+                    <button type="button" onclick="window.location.href='{{ route('scan.landing') }}'" class="w-full max-w-xs bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold py-2.5 rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2">
+                        <span>Kembali ke Halaman Awal</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('validationForm');
+    const successPopup = document.getElementById('successPopup');
     
-    // Konfirmasi sebelum submit
-    // form.addEventListener('submit', function(e) {
-    //     const confirmed = confirm('Apakah Anda yakin ingin menyimpan data pasien ini?');
-    //     if (!confirmed) {
-    //         e.preventDefault();
-    //     }
-    // });
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalContent = submitBtn.innerHTML;
+            
+            // Loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `
+                <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Menyimpan...
+            `;
+            
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Update content modal
+                    document.getElementById('resPatientName').textContent = result.data.patient_name || '-';
+                    document.getElementById('resPatientCondition').textContent = result.data.patient_condition || '-';
+                    
+                    const destEl = document.getElementById('resDestination');
+                    destEl.textContent = result.data.destination;
+                    if (result.data.destination === 'IGD') {
+                        destEl.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 ml-2';
+                    } else {
+                        destEl.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 ml-2';
+                    }
+                    
+                    document.getElementById('resDriverName').textContent = result.data.driver_name;
+                    document.getElementById('resDriverIdCard').textContent = result.data.driver_id_card;
+                    document.getElementById('resScanTime').textContent = result.data.scan_time;
+                    
+                    // Tampilkan modal
+                    successPopup.classList.remove('hidden');
+                } else {
+                    alert(result.message || 'Gagal menyimpan data');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalContent;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan sistem');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalContent;
+            });
+        });
+    }
 });
 
 function goBackToInput() {
-    // Data sudah tersimpan di session dari controller, langsung navigasi
     window.location.href = '{{ route('driver.scan', $driver->driver_id_card) }}';
 }
 </script>
